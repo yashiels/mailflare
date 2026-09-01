@@ -64,20 +64,20 @@ export async function provisionDomainOnCloudflare(
 	}
 
 	if (enableSending) {
-		if (isZoneApex(normalized, zone.name)) {
-			sendingEnabled = false;
+		// Cloudflare Email Sending accepts apex domains as sending identities
+		// (verified 2026-09), so provision apex and subdomains alike instead of
+		// skipping the apex. Cloudflare auto-creates the DKIM/SPF/return-path DNS
+		// for the zone it manages.
+		const subs = await listSendingSubdomains(env, zone.id);
+		const existingSub = subs.find((s) => s.name === normalized);
+		if (existingSub) {
+			sendingSubdomainTag = existingSub.tag;
+			sendingEnabled = existingSub.enabled;
 		} else {
-			const subs = await listSendingSubdomains(env, zone.id);
-			const existingSub = subs.find((s) => s.name === normalized);
-			if (existingSub) {
-				sendingSubdomainTag = existingSub.tag;
-				sendingEnabled = existingSub.enabled;
-			} else {
-				const created = await createSendingSubdomain(env, zone.id, normalized);
-				sendingSubdomainTag = created.tag;
-				sendingEnabled = created.enabled;
-				changes.createdSendingSubdomainTag = created.tag;
-			}
+			const created = await createSendingSubdomain(env, zone.id, normalized);
+			sendingSubdomainTag = created.tag;
+			sendingEnabled = created.enabled;
+			changes.createdSendingSubdomainTag = created.tag;
 		}
 	}
 

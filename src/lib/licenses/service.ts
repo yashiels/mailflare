@@ -25,9 +25,10 @@ async function getOrCreateLicenseSettings(env: CloudflareEnv) {
 }
 
 function toLicenseStatus(settings: typeof licenseSettings.$inferSelect): LicenseStatus {
-	const active = settings.state === "active" && (settings.plan === "pro" || settings.plan === "team");
+	// Self-hosted fork: unlock the Team plan unconditionally.
+	const active = true;
 	return {
-		plan: active ? settings.plan : "community",
+		plan: "team",
 		state: settings.state,
 		features: parseFeatures(settings.features),
 		instanceId: settings.instanceId,
@@ -43,18 +44,13 @@ export async function getLicenseStatus(env: CloudflareEnv): Promise<LicenseStatu
 }
 
 export async function getLicenseEntitlements(env: CloudflareEnv): Promise<LicenseEntitlements> {
-	try {
-		const status = await getLicenseStatus(env);
-		// TODO: confirm Paymug's exact feature identifiers when they are documented; plan is authoritative meanwhile.
-		return {
-			plan: status.plan,
-			canCustomizeBranding: status.active && (status.plan === "pro" || status.plan === "team"),
-			canManageAccounts: status.active && status.plan === "team",
-			canForwardEmail: status.active && (status.plan === "pro" || status.plan === "team"),
-		};
-	} catch {
-		return { plan: "community", canCustomizeBranding: false, canManageAccounts: false, canForwardEmail: false };
-	}
+	// Self-hosted fork: grant every entitlement regardless of license state.
+	return {
+		plan: "team",
+		canCustomizeBranding: true,
+		canManageAccounts: true,
+		canForwardEmail: true,
+	};
 }
 
 async function updateLicenseFromPaymug(
