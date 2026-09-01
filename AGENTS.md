@@ -13,7 +13,11 @@ deployment, customizations, and operations. Upstream docs live in `docs/`.
 - **Resources:** D1 `mailflare`, R2 `mailflare-raw`, Queues `mailflare-inbound`/`mailflare-outbound`,
   DO `RealtimeHub`, Workflow `mailflare-database-backup` (daily 02:00).
 - **Plan:** Workers Paid ($5/mo) — required for sending + queues. R2 Paid also active.
-- **Pilot domain:** `sookdeo.co.za` (apex). Others to be added.
+- **Connected domains:** `sookdeo.co.za`, `yashiel.dev` (both apex, send+receive live). More to be added.
+  - A clean domain with no prior mail (e.g. yashiel.dev) is best-case: Cloudflare auto-adds apex MX,
+    apex SPF (`include:_spf.mx.cloudflare.net`), and `_dmarc p=reject` on connect — good deliverability
+    from day one. Domains with legacy cPanel records (e.g. sookdeo.co.za) need the old MX deleted and
+    SPF repaired manually first.
 
 ## Our customizations (vs upstream)
 
@@ -64,6 +68,13 @@ npm run deploy:local        # next build + opennext build + d1 migrate remote + 
 3. Delete any pre-existing non-Cloudflare MX (Email Routing refuses to write MX otherwise — error 2008).
 4. Fix SPF to `v=spf1 include:_spf.mx.cloudflare.net ~all`; keep/repair DKIM; DMARC as desired.
 5. Create mailboxes; test in + out.
+
+### "No routing" in the Domains DNS panel — usually a misread
+The admin DNS panel shows `Email Routing: { "records": [], "missing": [], "status": "ready" }`.
+`records: []` means **nothing outstanding**, not "no routing configured" — the MX/rules are already
+in place so they aren't re-listed. `status: "ready"` is the real signal. Confirm via
+`GET /zones/{zid}/email/routing` (expect enabled/ready) + the apex MX + rules. The definitive test is
+sending a real email to an address on the domain and seeing it in the webmail inbox.
 
 ### Common fixes
 - **"destination address is not a verified address" (send fails):** the domain has no Email

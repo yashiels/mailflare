@@ -30,6 +30,7 @@ has the same facts in prose; read it for background.
 | R2 | `mailflare-raw` |
 | Queues | `mailflare-inbound`, `mailflare-outbound` |
 | Plan | Workers Paid ($5/mo) — required for sending + queues |
+| Domains | sookdeo.co.za, yashiel.dev (both apex, send+receive live) |
 | Runtime token | `CF_TOKEN` secret = 1Password Private "Cloudflare – MailFlare email token" |
 | Deploy token | env `CLOUDFLARE_API_TOKEN` (broad account token; Workers/D1/R2/Queues) |
 
@@ -91,6 +92,9 @@ provision sending subdomain, MX/SPF edits, D1 queries).
   by hand: `POST /zones/{zid}/email/sending/subdomains {name:"<domain>"}`, then in D1
   `UPDATE domains SET sending_enabled=1, sending_subdomain_tag='<tag>' WHERE hostname='<domain>'`.
   Cloudflare auto-adds the DKIM/SPF/bounce-MX DNS. Dedupe DKIM if you also added it manually.
+- **Admin Domains panel looks like "no routing"** → misread. `Email Routing: {records:[], missing:[], status:"ready"}`
+  means nothing outstanding (MX/rules already in place), not unconfigured. `status:"ready"` is the signal;
+  confirm with `GET /zones/{zid}/email/routing` + apex MX + rules; test by receiving a real email.
 - **Email Routing "misconfigured/locked"** → SPF not pointing at Cloudflare, or DNS still
   propagating. Set SPF to `v=spf1 include:_spf.mx.cloudflare.net ~all`; recheck `GET /zones/{zid}/email/routing`.
 - **Connect domain → 409 code 2008 "Non-Cloudflare MX records exist"** → delete the old cPanel/host MX first.
